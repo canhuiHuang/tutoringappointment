@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 public record SlotDto(
     Long id,
+    Long serviceId,
     String providerName,
     String serviceName,
     LocalDateTime startTime,

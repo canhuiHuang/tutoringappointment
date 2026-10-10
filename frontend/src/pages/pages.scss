@@ -1,0 +1,105 @@
+﻿.home-page {
+  max-width: 1000px;
+  margin: 24px auto;
+  padding: 20px;
+  background: white;
+}
+.home-page section {
+  margin: 24px 0;
+}
+.home-page form,
+.home-page .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+}
+.home-page label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.home-page input,
+.home-page select,
+.home-page button {
+  padding: 8px;
+}
+.home-page .table-scroll {
+  overflow-x: auto;
+}
+.home-page table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.home-page th,
+.home-page td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+}
+.home-page .error {
+  color: #a40000;
+}
+.home-page .message {
+  color: #17652d;
+}
+.home-page .actions {
+  margin-top: 12px;
+}
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.calendar-scroll {
+  overflow-x: auto;
+}
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(125px, 1fr));
+}
+.calendar-day {
+  border: 1px solid #ddd;
+  min-height: 160px;
+  padding: 8px;
+}
+.calendar-day h4 {
+  margin: 0 0 12px;
+}
+.calendar-slot {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 8px;
+  border: 1px solid #999;
+  text-align: left;
+  font-size: 14px;
+}
+.available {
+  background: #e1f4df;
+}
+.booked {
+  background: #f9dddd;
+}
+.legend {
+  display: inline-block;
+  padding: 4px 8px;
+}
+.home-page dialog {
+  width: min(400px, 85vw);
+  padding: 24px;
+  border: 1px solid #888;
+}
+.home-page dialog::backdrop {
+  background: #0006;
+}
+.home-page dt {
+  font-weight: bold;
+  margin-top: 10px;
+}
+.home-page dd {
+  margin: 4px 0;
+}

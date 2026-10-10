@@ -1,0 +1,17 @@
+﻿body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  color: #222;
+  background: #f6f6f6;
+}
+button,
+input,
+select {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: default;
+}

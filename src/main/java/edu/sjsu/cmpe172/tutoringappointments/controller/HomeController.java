@@ -16,7 +16,7 @@ public class HomeController {
         this.homeService = homeService;
     }
 
-    @GetMapping("/")
+    @GetMapping("/api/services")
     public List<ServiceDto> home() {
         return homeService.getServices();
     }

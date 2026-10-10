@@ -19,6 +19,7 @@ public class ServiceRepository {
         String sql = """
             SELECT
                 s.id,
+                s.provider_id,
                 s.name,
                 s.description,
                 s.duration,
@@ -32,6 +33,7 @@ public class ServiceRepository {
         return jdbcTemplate.query(sql, (rs, rowNum) ->
             new ServiceDto(
                 rs.getLong("id"),
+                rs.getLong("provider_id"),
                 rs.getString("name"),
                 rs.getString("description"),
                 rs.getInt("duration"),
