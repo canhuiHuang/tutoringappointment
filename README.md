@@ -83,5 +83,5 @@ Past bookings become COMPLETED when appointments are viewed.
 
 ## Submission
 
-Report: docs/CMPE172_Milestone_2_Report.pdf
-Video link: https://drive.google.com/file/d/1I2d9oYg6jLG8ODiSDpyP3o9HqlT7AYmF
+#### Report: docs/CMPE172_Milestone_2_Report.pdf
+#### Video link: https://drive.google.com/file/d/1I2d9oYg6jLG8ODiSDpyP3o9HqlT7AYmF
