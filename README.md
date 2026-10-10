@@ -6,10 +6,63 @@ Includes session login with BCrypt, role checks, filtered/paginated slots, booki
 appointment history, provider availability management, validation, global errors, and concurrency protection.
 The database uses STUDENT for customers and TUTOR for providers.
 
+## Prerequisites
+
+- JDK 21.
+- Node.js 24 and npm for the frontend.
+- PostgreSQL installed and running (the local setup uses port 5432).
+- Git to clone the repository.
+
+Maven does not need to be installed separately; the repository includes the Maven Wrapper.
+The commands below use Windows PowerShell.
+
 ## Run locally
 
-The local configuration connects to `tutoringdb` using PostgreSQL username `postgres` and password `root`.
-Start PostgreSQL, then start the backend from the project root:
+### 1. Clone the repository
+
+```powershell
+git clone https://github.com/canhuiHuang/tutoringappointment.git
+cd tutoringappointment
+```
+
+### 2. Create and configure the database
+
+Start PostgreSQL. In pgAdmin, open the Query Tool on the existing `postgres` database,
+or connect to it with psql. Run this statement once, outside a transaction:
+
+```sql
+CREATE DATABASE tutoringdb;
+```
+
+The database must exist before Spring Boot starts. `schema.sql` creates tables inside
+it; it cannot create the database that Spring needs to connect to.
+
+Edit `src/main/resources/application.properties` to match your PostgreSQL installation:
+
+```properties
+spring.datasource.url=${DB_URL:jdbc:postgresql://localhost:5432/tutoringdb}
+spring.datasource.username=postgres
+spring.datasource.password=YOUR_POSTGRES_PASSWORD
+```
+
+Replace `YOUR_POSTGRES_PASSWORD` with your PostgreSQL password and change the username,
+host, or port if needed. The checked-in local defaults currently use username `postgres`
+and password `root`; these must match your own installation. Use a database account
+with permission to create tables and insert/update data in `tutoringdb`.
+
+Alternatively, override the credentials for the current PowerShell terminal:
+
+```powershell
+$env:SPRING_DATASOURCE_USERNAME = "postgres"
+$env:SPRING_DATASOURCE_PASSWORD = "YOUR_POSTGRES_PASSWORD"
+```
+
+These environment variables override the properties when you launch the backend from
+that terminal. To use another database URL, set `$env:DB_URL` as well.
+
+### 3. Start the backend
+
+From the repository root:
 
 ```powershell
 .\mvnw.cmd spring-boot:run
@@ -17,8 +70,11 @@ Start PostgreSQL, then start the backend from the project root:
 
 Spring Boot runs schema.sql and then seed.sql automatically.
 The SQL inserts missing accounts, provider profiles, services, and initial slots without changing existing passwords or bookings.
+The backend runs at http://localhost:8062.
 
-In a second terminal:
+### 4. Start the frontend
+
+Open a second terminal at the repository root:
 
 ```powershell
 cd frontend
@@ -27,6 +83,7 @@ npm run dev -- --port 8061
 ```
 
 Open Vite's URL, normally http://localhost:8061. Spring Boot serves JSON on port 8062.
+Keep both terminals running.
 
 ## Sample accounts
 
@@ -41,8 +98,16 @@ All seeded passwords are 1234. seed.sql stores only BCrypt hashes.
 
 ## Test
 
+Run backend tests from the repository root:
+
 ```powershell
 .\mvnw.cmd test
+```
+
+Tests use a separate H2 database and do not require a running backend or PostgreSQL.
+To build the backend and check the frontend:
+
+```powershell
 .\mvnw.cmd package
 cd frontend
 npm run build
@@ -84,4 +149,5 @@ Past bookings become COMPLETED when appointments are viewed.
 ## Submission
 
 #### Report: docs/CMPE172_Milestone_2_Report.pdf
+
 #### Video link: https://drive.google.com/file/d/1I2d9oYg6jLG8ODiSDpyP3o9HqlT7AYmF
