@@ -22,6 +22,22 @@ public class SlotRepository {
         return findAvailable(null, null, null, 0, 20);
     }
 
+    public SlotDto findById(long slotId) {
+        String sql = """
+            SELECT a.*, u.name AS provider_name, s.name AS service_name
+            FROM availability_slots a
+            JOIN services s ON s.id = a.service_id
+            JOIN providers p ON p.id = a.provider_id
+            JOIN users u ON u.id = p.user_id
+            WHERE a.id = ?
+            """;
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new SlotDto(
+            rs.getLong("id"), rs.getLong("service_id"), rs.getString("provider_name"),
+            rs.getString("service_name"), rs.getTimestamp("start_time").toLocalDateTime(),
+            rs.getTimestamp("end_time").toLocalDateTime(), rs.getString("status")), slotId)
+            .stream().findFirst().orElseThrow(() -> new BookingException(404, "Slot not found."));
+    }
+
     public List<SlotDto> findAvailable(Long providerId, Long serviceId, LocalDate date, int page, int size) {
         return findAvailable(providerId, serviceId, date, page, size, null);
     }

@@ -20,6 +20,13 @@ public class SlotService {
         return slotRepository.findAllAvailable();
     }
 
+    public SlotDto getSlot(long slotId) {
+        if (slotId <= 0) {
+            throw new BookingException(400, "Slot ID must be positive.");
+        }
+        return slotRepository.findById(slotId);
+    }
+
     public List<SlotDto> getAvailableSlots(Long providerId, Long serviceId, LocalDate date, int page, int size) {
         return slotRepository.findAvailable(providerId, serviceId, date, page, size);
     }

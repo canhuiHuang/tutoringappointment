@@ -5,6 +5,7 @@ import CustomerPage from "@/pages/CustomerPage";
 import MyAppointmentsPage from "@/pages/MyAppointmentsPage";
 import ProviderPage from "@/pages/ProviderPage";
 import ManageSlotsPage from "@/pages/ManageSlotsPage";
+import AssistantPage from "@/pages/AssistantPage";
 
 export const router = createBrowserRouter([
   {
@@ -17,6 +18,7 @@ export const router = createBrowserRouter([
         children: [
           { path: "/customer", Component: CustomerPage },
           { path: "/customer/appointments", Component: MyAppointmentsPage },
+          { path: "/customer/assistant", Component: AssistantPage },
         ],
       },
       {

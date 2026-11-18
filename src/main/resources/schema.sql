@@ -59,3 +59,11 @@ CREATE TABLE IF NOT EXISTS appointments (
     CHECK ((status = 'CANCELLED' AND active_slot_id IS NULL) OR
            (status IN ('BOOKED', 'COMPLETED') AND active_slot_id = slot_id AND active_slot_id IS NOT NULL))
 );
+
+CREATE TABLE IF NOT EXISTS ai_reminders (
+    appointment_id BIGINT PRIMARY KEY,
+    claimed_at TIMESTAMP NOT NULL,
+    sent_at TIMESTAMP,
+    message VARCHAR(1000),
+    FOREIGN KEY (appointment_id) REFERENCES appointments(id)
+);

@@ -58,6 +58,7 @@ export default function Layout() {
             <>
               <Link to="/customer">Available slots</Link>
               <Link to="/customer/appointments">My appointments</Link>
+              <Link to="/customer/assistant">Assistant</Link>
             </>
           )}
         </nav>

@@ -1,4 +1,4 @@
-# Tutoring appointments - Milestone 3
+# Tutoring appointments - Milestone 4
 
 Java 21, Spring Boot, React + TypeScript, PostgreSQL, and hand-written JDBC SQL.
 
@@ -8,6 +8,10 @@ The database uses STUDENT for customers and TUTOR for providers.
 
 Milestone 3 adds an HTTP notification gateway and mock service, commit-then-notify,
 timeouts/retries/fallback, `/health`, `/metrics`, Docker Compose, and GitHub Actions tests.
+
+Milestone 4 adds a Gemini/Spring AI booking assistant, confirmed writes, scheduled AI
+reminders, and policy Q&A using SimpleVectorStore. AI is off until you supply your key.
+Start with [the milestone 4 setup guide](docs/Milestone4_Setup.md).
 
 ## Run with Docker (frontend + backend + PostgreSQL)
 
@@ -179,6 +183,8 @@ can delay the HTTP response but do not hold the booking row lock.
 - `GET /metrics`: JSON counters for `bookingsCommitted`, `cancellationsCommitted`,
   `notificationsDelivered`, and `notificationsFailed`. Counters are per process since startup;
   they reset on restart and are not historical database totals.
+- The notification counters above cover booking/cancellation confirmations. AI reminder
+  outcomes use the manual-run response, reminder logs, and the `ai_reminders` table.
 - INFO logs show committed operations and accepted/delivered notification IDs/types.
   WARN logs show failed attempts. ERROR logs show fallback or failed database health checks.
   Notification logs omit passwords, recipient addresses, and message bodies.
@@ -227,6 +233,12 @@ run after pushing; local test success does not establish a completed remote CI r
 | GET      | /api/provider/appointments             | Bookings with the provider                                                  |
 | POST     | /api/provider/slots                    | Create using serviceId, startTime, endTime                                  |
 | DELETE   | /api/provider/slots/{id}               | Remove an available slot owned by the provider                              |
+| GET | /api/customer/ai/status | Whether AI is enabled |
+| POST | /api/customer/ai/chat | Tool-calling assistant; JSON message |
+| POST | /api/customer/ai/confirm | Confirm the pending action; JSON confirmationId |
+| DELETE | /api/customer/ai/chat | Clear conversation and pending action |
+| POST | /api/customer/ai/ask | Policy-only RAG question; JSON message |
+| POST | /api/provider/ai/reminders/run | Run AI reminders for the logged-in tutor |
 
 React sends the session cookie automatically through Vite's /api and /slots proxy.
 The UI navigates one Monday-to-Sunday week at a time and loads all matching slots in that week.
@@ -241,10 +253,11 @@ Past bookings become COMPLETED when appointments are viewed.
 
 ## Submission
 
-- Milestone 3 report draft: [docs/Milestone3_Report.pdf](docs/Milestone3_Report.pdf)
-- Distribution diagram: [docs/Milestone3_Distribution.pdf](docs/Milestone3_Distribution.pdf)
-- Walkthrough script: [docs/Milestone3_Walkthrough.md](docs/Milestone3_Walkthrough.md)
-- Milestone 3 video: **add your recorded video link before submitting**.
+- Milestone 4 report draft: [docs/Milestone4_Report.pdf](docs/Milestone4_Report.pdf)
+- Editable report: [docs/Milestone4_Report.md](docs/Milestone4_Report.md)
+- Setup and remaining steps: [docs/Milestone4_Setup.md](docs/Milestone4_Setup.md)
+- Simple video script: [docs/Milestone4_Walkthrough.md](docs/Milestone4_Walkthrough.md)
+- Milestone 4 video: **[ADD YOUR VIDEO LINK HERE]**.
 - Review the report draft and fill in personal, repository, and video details.
 
 Previous milestone 2 report: docs/CMPE172_Milestone_2_Report.pdf
