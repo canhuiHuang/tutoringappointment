@@ -89,6 +89,12 @@ public class BookingRepository {
         jdbcTemplate.update(sql, status, id);
     }
 
+    public String studentEmail(long studentId) {
+        String sql = "SELECT email FROM users WHERE id = ?";
+
+        return jdbcTemplate.queryForObject(sql, String.class, studentId);
+    }
+
     public Optional<Booking> booking(long id) {
         String sql = """
             SELECT id, student_id, slot_id, status
