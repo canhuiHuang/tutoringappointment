@@ -1,10 +1,38 @@
-# Tutoring appointments - Milestone 2
+# Tutoring appointments - Milestone 3
 
 Java 21, Spring Boot, React + TypeScript, PostgreSQL, and hand-written JDBC SQL.
 
 Includes session login with BCrypt, role checks, filtered/paginated slots, booking, cancellation,
 appointment history, provider availability management, validation, global errors, and concurrency protection.
 The database uses STUDENT for customers and TUTOR for providers.
+
+Milestone 3 adds an HTTP notification gateway and mock service, commit-then-notify,
+timeouts/retries/fallback, `/health`, `/metrics`, Docker Compose, and GitHub Actions tests.
+
+## Run with Docker (frontend + backend + PostgreSQL)
+
+Install Docker Desktop with Linux containers and start it. From the repository root:
+
+```powershell
+$env:DB_PASSWORD = "choose-a-local-database-password"
+docker compose up --build -d
+docker compose logs -f app
+```
+
+Open **http://localhost:8062**. The app image includes the React build, so Node.js, Java,
+and a separate local PostgreSQL installation are not needed for this option. Compose
+creates `tutoringdb`, waits for the database to become ready, and starts the app.
+The mock notification controller runs in the same app but is called through HTTP.
+
+```powershell
+Invoke-RestMethod http://localhost:8062/health
+Invoke-RestMethod http://localhost:8062/metrics
+docker compose down
+```
+
+The named `postgres-data` volume preserves the database after `down`. Keep the same
+database password when restarting an existing volume. Stop any local backend using
+port 8062 before starting Compose. The commands below are the alternative development setup.
 
 ## Prerequisites
 
@@ -41,23 +69,23 @@ Edit `src/main/resources/application.properties` to match your PostgreSQL instal
 
 ```properties
 spring.datasource.url=${DB_URL:jdbc:postgresql://localhost:5432/tutoringdb}
-spring.datasource.username=postgres
-spring.datasource.password=YOUR_POSTGRES_PASSWORD
+spring.datasource.username=${DB_USER:postgres}
+spring.datasource.password=${DB_PASSWORD:root}
 ```
 
-Replace `YOUR_POSTGRES_PASSWORD` with your PostgreSQL password and change the username,
-host, or port if needed. The checked-in local defaults currently use username `postgres`
+Set environment variables for your PostgreSQL password and change the username,
+host, or port if needed. The local defaults currently use username `postgres`
 and password `root`; these must match your own installation. Use a database account
 with permission to create tables and insert/update data in `tutoringdb`.
 
 Alternatively, override the credentials for the current PowerShell terminal:
 
 ```powershell
-$env:SPRING_DATASOURCE_USERNAME = "postgres"
-$env:SPRING_DATASOURCE_PASSWORD = "YOUR_POSTGRES_PASSWORD"
+$env:DB_USER = "postgres"
+$env:DB_PASSWORD = "YOUR_POSTGRES_PASSWORD"
 ```
 
-These environment variables override the properties when you launch the backend from
+These environment variables configure the connection when you launch the backend from
 that terminal. To use another database URL, set `$env:DB_URL` as well.
 
 ### 3. Start the backend
@@ -120,6 +148,71 @@ Run only the unit tests with `.\mvnw.cmd test "-Dtest=BookingServiceTests"`.
 Run only the concurrency test with `.\mvnw.cmd test "-Dtest=BookingIntegrationTests"`.
 Results are in target/surefire-reports.
 
+Milestone 3 tests also cover booking/cancellation during notification downtime, rollback
+without notification, committed changes visible before notification, retry payload stability,
+timeout fallback, persistent duplicate suppression, and health responses.
+
+## Notifications and observability
+
+`BookingService` publishes a `NotificationRequest` inside its database transaction.
+`BookingNotifications` handles it with `@TransactionalEventListener(AFTER_COMMIT)`.
+Only after commit does `NotificationGateway` POST JSON to `/mock/notifications`.
+There is no real email/SMS delivery. The DTO includes `id`, `recipient`, `type`, and `message`.
+The mock stores it in the `notifications` table. Retries reuse the ID, and the primary key
+prevents duplicate storage, including after restart.
+
+| Setting | Default | Purpose |
+| --- | --- | --- |
+| `NOTIFICATION_URL` | `http://localhost:8062/mock/notifications` | HTTP destination; port follows `server.port` unless overridden |
+| `notification.timeout-ms` | 500 | Connect and read timeout, each in milliseconds |
+| `notification.attempts` | 3 | Maximum total attempts, not three extra retries |
+| `notification.retry-delay-ms` | 100 | Delay between retryable failures |
+
+Connection failures, timeouts, HTTP 429, and 5xx responses are retried. Other HTTP 4xx
+responses are not retried. Exhaustion logs an ERROR and increments `notificationsFailed`;
+booking/cancellation remains successful. Delivery is synchronous after commit, so retries
+can delay the HTTP response but do not hold the booking row lock.
+
+- `GET /health`: executes `SELECT 1`; returns HTTP 200 with `status=UP,database=UP`,
+  or HTTP 503 with both `DOWN` if database access fails. It does not require notifications
+  to be up for the scheduler to be healthy.
+- `GET /metrics`: JSON counters for `bookingsCommitted`, `cancellationsCommitted`,
+  `notificationsDelivered`, and `notificationsFailed`. Counters are per process since startup;
+  they reset on restart and are not historical database totals.
+- INFO logs show committed operations and accepted/delivered notification IDs/types.
+  WARN logs show failed attempts. ERROR logs show fallback or failed database health checks.
+  Notification logs omit passwords, recipient addresses, and message bodies.
+
+### Demonstrate notification failure and recovery
+
+For local development, stop the backend and start it from a terminal with:
+
+```powershell
+$env:NOTIFICATION_URL = "http://127.0.0.1:1/mock/notifications"
+.\mvnw.cmd spring-boot:run
+```
+
+Book or cancel through React. The operation still succeeds; logs show three failed attempts
+and fallback, and `/metrics` shows a failed notification. Stop the backend, then restore
+the normal destination and restart:
+
+```powershell
+Remove-Item Env:NOTIFICATION_URL
+.\mvnw.cmd spring-boot:run
+```
+
+New notifications can now be delivered. Missed notifications are **not automatically queued
+or replayed**. An operator can resubmit the original DTO to the restored mock with the same
+operation ID, such as `appointment-12-BOOKED`; duplicate requests remain safe. A crash between
+commit and notification can lose a notification. A durable outbox would address that, but is
+outside this minimal implementation.
+
+### CI
+
+`.github/workflows/ci.yml` builds React, includes it in the application, and runs Maven
+`verify` (including all tests) on every push and pull request. Inspect the GitHub Actions
+run after pushing; local test success does not establish a completed remote CI run.
+
 ## API
 
 | Method   | Endpoint                               | Purpose                                                                     |
@@ -148,6 +241,12 @@ Past bookings become COMPLETED when appointments are viewed.
 
 ## Submission
 
-#### Report: docs/CMPE172_Milestone_2_Report.pdf
+- Milestone 3 report draft: [docs/Milestone3_Report.pdf](docs/Milestone3_Report.pdf)
+- Distribution diagram: [docs/Milestone3_Distribution.pdf](docs/Milestone3_Distribution.pdf)
+- Walkthrough script: [docs/Milestone3_Walkthrough.md](docs/Milestone3_Walkthrough.md)
+- Milestone 3 video: **add your recorded video link before submitting**.
+- Review the report draft and fill in personal, repository, and video details.
 
-#### Video link: https://drive.google.com/file/d/1I2d9oYg6jLG8ODiSDpyP3o9HqlT7AYmF
+Previous milestone 2 report: docs/CMPE172_Milestone_2_Report.pdf
+
+Previous milestone 2 video: https://drive.google.com/file/d/1I2d9oYg6jLG8ODiSDpyP3o9HqlT7AYmF

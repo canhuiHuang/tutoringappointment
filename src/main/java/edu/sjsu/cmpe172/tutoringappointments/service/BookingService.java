@@ -1,7 +1,9 @@
 package edu.sjsu.cmpe172.tutoringappointments.service;
 
 import edu.sjsu.cmpe172.tutoringappointments.dto.AppointmentDto;
+import edu.sjsu.cmpe172.tutoringappointments.dto.NotificationRequest;
 import edu.sjsu.cmpe172.tutoringappointments.repository.BookingRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,9 +16,11 @@ import java.util.List;
 public class BookingService {
 
     private final BookingRepository bookingRepository;
+    private final ApplicationEventPublisher events;
 
-    public BookingService(BookingRepository bookingRepository) {
+    public BookingService(BookingRepository bookingRepository, ApplicationEventPublisher events) {
         this.bookingRepository = bookingRepository;
+        this.events = events;
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
@@ -38,6 +42,10 @@ public class BookingService {
 
         long appointmentId = bookingRepository.insertBooking(studentId, slotId);
         bookingRepository.slotStatus(slotId, "BOOKED");
+        events.publishEvent(new NotificationRequest(
+            "appointment-" + appointmentId + "-BOOKED",
+            bookingRepository.studentEmail(studentId), "BOOKED",
+            "Appointment " + appointmentId + " is confirmed for " + slot.start() + "."));
 
         return appointmentId;
     }
@@ -65,6 +73,10 @@ public class BookingService {
 
         bookingRepository.cancel(appointmentId);
         bookingRepository.slotStatus(slot.id(), "AVAILABLE");
+        events.publishEvent(new NotificationRequest(
+            "appointment-" + appointmentId + "-CANCELLED",
+            bookingRepository.studentEmail(studentId), "CANCELLED",
+            "Appointment " + appointmentId + " has been cancelled."));
     }
 
     @Transactional

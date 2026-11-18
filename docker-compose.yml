@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: tutoringdb
+      POSTGRES_USER: tutoring
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in your terminal before starting Compose}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tutoring -d tutoringdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+
+  app:
+    build: .
+    ports:
+      - "8062:8062"
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/tutoringdb
+      DB_USER: tutoring
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in your terminal before starting Compose}
+      NOTIFICATION_URL: http://localhost:8062/mock/notifications
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres-data:

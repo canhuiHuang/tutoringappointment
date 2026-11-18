@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
@@ -23,7 +24,7 @@ class BookingServiceTests {
     LocalDateTime future=LocalDateTime.now().plusDays(5);
 
     @BeforeEach void setup() { 
-        repository=mock(BookingRepository.class);service=new BookingService(repository);
+        repository=mock(BookingRepository.class);service=new BookingService(repository, mock(ApplicationEventPublisher.class));
     }
 
     BookingRepository.LockedSlot slot(String status) { return new BookingRepository.LockedSlot(10,1,2,future,future.plusHours(1),status,60); }

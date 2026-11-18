@@ -2,11 +2,14 @@ package edu.sjsu.cmpe172.tutoringappointments;
 
 import edu.sjsu.cmpe172.tutoringappointments.service.BookingException;
 import edu.sjsu.cmpe172.tutoringappointments.service.BookingService;
+import edu.sjsu.cmpe172.tutoringappointments.service.BookingNotifications;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -27,6 +30,62 @@ class BookingIntegrationTests {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private BookingNotifications bookingNotifications;
+
+    @Autowired
+    private PlatformTransactionManager transactionManager;
+
+    @Test
+    void rollbackDoesNotSendANotification() {
+        long serviceId = jdbcTemplate.queryForObject(
+            "SELECT id FROM services WHERE name = 'Calculus'", Long.class);
+        long slotId = createSlot(serviceId);
+        long studentId = findUser("john@sjsu.edu");
+        var metricsBefore = bookingNotifications.metrics();
+
+        new TransactionTemplate(transactionManager).executeWithoutResult(transaction -> {
+            bookingService.book(studentId, slotId);
+            assertEquals(metricsBefore, bookingNotifications.metrics());
+            transaction.setRollbackOnly();
+        });
+
+        assertEquals(metricsBefore, bookingNotifications.metrics());
+        assertEquals(0, jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM appointments WHERE slot_id = ?", Integer.class, slotId));
+        assertEquals("AVAILABLE", jdbcTemplate.queryForObject(
+            "SELECT status FROM availability_slots WHERE id = ?", String.class, slotId));
+    }
+
+    @Test
+    void bookingAndCancellationStillSucceedWhenNotificationServiceIsDown() {
+        long serviceId = jdbcTemplate.queryForObject(
+            "SELECT id FROM services WHERE name = 'Calculus'", Long.class);
+        long studentId = findUser("john@sjsu.edu");
+        long slotId = createSlot(serviceId);
+        long failuresBefore = bookingNotifications.metrics().get("notificationsFailed");
+
+        // Test configuration points to port 1, where no notification server runs.
+        long appointmentId = bookingService.book(studentId, slotId);
+
+        assertEquals("BOOKED", jdbcTemplate.queryForObject(
+            "SELECT status FROM appointments WHERE id = ?", String.class, appointmentId));
+        assertEquals("BOOKED", jdbcTemplate.queryForObject(
+            "SELECT status FROM availability_slots WHERE id = ?", String.class, slotId));
+        assertEquals(failuresBefore + 1, bookingNotifications.metrics().get("notificationsFailed"));
+
+        bookingService.cancel(studentId, appointmentId);
+        assertEquals("CANCELLED", jdbcTemplate.queryForObject(
+            "SELECT status FROM appointments WHERE id = ?", String.class, appointmentId));
+        assertEquals("AVAILABLE", jdbcTemplate.queryForObject(
+            "SELECT status FROM availability_slots WHERE id = ?", String.class, slotId));
+        assertEquals(failuresBefore + 2, bookingNotifications.metrics().get("notificationsFailed"));
+
+        // Repeating cancellation must not publish another notification.
+        bookingService.cancel(studentId, appointmentId);
+        assertEquals(failuresBefore + 2, bookingNotifications.metrics().get("notificationsFailed"));
+    }
 
     @Test
     void exactlyOneOfTwoConcurrentBookingsSucceeds() throws Exception {
