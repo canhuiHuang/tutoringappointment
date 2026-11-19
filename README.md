@@ -11,7 +11,16 @@ timeouts/retries/fallback, `/health`, `/metrics`, Docker Compose, and GitHub Act
 
 Milestone 4 adds a Gemini/Spring AI booking assistant, confirmed writes, scheduled AI
 reminders, and policy Q&A using SimpleVectorStore. AI is off until you supply your key.
-Start with [the milestone 4 setup guide](docs/Milestone4_Setup.md).
+For local development, add these settings to the root `.env` and restart the backend:
+
+```properties
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY
+AI_ENABLED=true
+AI_REMINDERS_ENABLED=false
+```
+
+Open **Assistant** after logging in as a customer. Set `AI_REMINDERS_ENABLED=true`
+to enable the scheduled reminders. Keep the API key out of Git and the frontend.
 
 ## Run with Docker (frontend + backend + PostgreSQL)
 
@@ -253,12 +262,9 @@ Past bookings become COMPLETED when appointments are viewed.
 
 ## Submission
 
-- Milestone 4 report draft: [docs/Milestone4_Report.pdf](docs/Milestone4_Report.pdf)
-- Editable report: [docs/Milestone4_Report.md](docs/Milestone4_Report.md)
-- Setup and remaining steps: [docs/Milestone4_Setup.md](docs/Milestone4_Setup.md)
-- Simple video script: [docs/Milestone4_Walkthrough.md](docs/Milestone4_Walkthrough.md)
+- Milestone 4 report: [docs/CMPE172_Milestone_4.pdf](docs/CMPE172_Milestone_4.pdf)
 - Milestone 4 video: **[ADD YOUR VIDEO LINK HERE]**.
-- Review the report draft and fill in personal, repository, and video details.
+- Include the report, repository link, and video link in the submission.
 
 Previous milestone 2 report: docs/CMPE172_Milestone_2_Report.pdf
 
